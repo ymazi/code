@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bookstore</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="data.js"></script>
+  </head>
+  <body>
+    <div id="App">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Bookstore</a>
+        <div
+          class="collapse navbar-collapse justify-content-end"
+          id="navbarNav"
+        >
+          <form class="form-inline">
+            <input
+              class="form-control mr-sm-2"
+              type="search"
+              placeholder="Search"
+              aria-label="Search"
+              v-model="searchBar"
+            />
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">
+              Search
+            </button>
+          </form>
+        </div>
+      </nav>
+      <div class="container my-5">
+        <div class="row">
+          <div class="col-md-8">
+            <div
+              class="d-flex justify-content-between mb-3"
+              style="padding-right: 15px"
+            >
+              <div>
+                <strong><label for="sortBy">Sort By:</label><br /> </strong>
+                <input
+                  type="radio"
+                  id="Availability"
+                  value="Availability"
+                  v-on:click="sortDataBy('Availability')"
+                  v-model="sortBy"
+                />
+                <label for="Availability">Availability</label><br />
+
+                <input
+                  type="radio"
+                  id="Subject"
+                  value="Subject"
+                  v-on:click="sortDataBy('Subject')"
+                  v-model="sortBy"
+                />
+                <label for="Subject">Subject</label><br />
+
+                <input
+                  type="radio"
+                  id="Price"
+                  value="Price"
+                  v-on:click="sortDataBy('Price')"
+                  v-model="sortBy"
+                />
+                <label for="Price">Price</label><br />
+
+                <input
+                  type="radio"
+                  id="Location"
+                  value="Location"
+                  v-on:click="sortDataBy('Location')"
+                  v-model="sortBy"
+                />
+                <label for="Location">Location</label><br />
+              </div>
+
+              <div>
+                <strong><label for="sortOrder">Sort Order:</label></strong>
+                <br />
+                <input
+                  type="radio"
+                  id="Ascending"
+                  value="true"
+                  v-on:click="sortInAscendingOrder(true)"
+                  v-model="sortAscending"
+                />
+                <label for="Ascending">Ascending</label><br />
+
+                <input
+                  type="radio"
+                  id="Descending"
+                  value="false"
+                  v-on:click="sortInAscendingOrder(false)"
+                  v-model="sortAscending"
+                />
+                <label for="Descending">Descending</label><br />
+              </div>
+            </div>
+            <div class="row">
+              <div
+                v-for="(lesson, i) in searchedLessons()"
+                class="col-md-6 col-lg-4 mb-4"
+              >
+                <div class="card">
+                  <img
+                    v-bind:src="lesson.subjectImg"
+                    class="card-img-top"
+                    alt="..."
+                  />
+                  <div class="card-body">
+                    <p class="card-text">Subject: {{lesson.subjectName}}</p>
+                    <p class="card-text">Location: {{lesson.location}}</p>
+                    <p class="card-text">
+                      Price: {{lesson.currency}}{{lesson.price}}
+                    </p>
+                    <p class="card-text">Quantity: {{lesson.spaces}}</p>
+                    <button
+                      class="btn btn-primary"
+                      v-on:click="addToCart(lesson)"
+                      v-if="canAddToCart(lesson)"
+                    >
+                      Add to Cart
+                    </button>
+                    <div v-else>
+                      <button disabled class="btn btn-primary disabled">
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card md-4" v-if="showCart">
+              <div class="card-header">
+                <strong>Cart</strong>
+
+                <button
+                  class="btn btn-danger btn-sm"
+                  v-on:click="showShoppingCart(false)"
+                  style="float: right"
+                >
+                  Hide
+                </button>
+              </div>
+              <p v-if="cart.lessons.length < 1" class="btn">No item in cart!</p>
+              <div v-else>
+                <ul
+                  v-for="lesson in subjects"
+                  v-if="cart.lessons.includes(lesson.id)"
+                  class="list-group list-group-flush"
+                >
+                  <li
+                    class="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    {{lesson.subjectName}}, {{getLocationShort(lesson)}}
+                    <span class="badge badge-primary badge-pill"
+                      >{{lesson.currency}}{{itemCountInCart(lesson) }} x
+                      {{lesson.price}}</span
+                    >
+
+                    <div>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        v-on:click="minusFromCart(lesson)"
+                      >
+                        -
+                      </button>
+                      <button
+                        class="btn btn-danger btn-sm"
+                        v-on:click="removeFromCart(lesson)"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="card-footer">
+                <p class="card-text float-right">
+                  <strong>Total:</strong> {{cart.currency}}{{totalCost()}}
+                </p>
+
+                <br />
+                <form action="#">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Name"
+                    aria-label="Name"
+                    v-model="cart.name"
+                    required
+                  />
+                  <br />
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Phone Number"
+                    aria-label="Phone Number"
+                    v-model="cart.phone"
+                    required
+                  />
+                  <br />
+                  <button
+                    class="btn btn-primary btn-block"
+                    type="submit"
+                    v-on:click="checkout()"
+                    v-if="canCheckout()"
+                  >
+                    Checkout
+                  </button>
+                  <div v-else>
+                    <button disabled class="btn btn-primary disabled">
+                      Checkout
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div v-else>
+              <button
+                style="float: right"
+                class="btn btn-primary"
+                v-on:click="showShoppingCart(true)"
+              >
+                Show Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
